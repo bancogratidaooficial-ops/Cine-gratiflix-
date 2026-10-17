@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CINE GRATIFLIX - Cinema Livre</title>
+<link rel="manifest" href="./manifest.json">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#050505;color:#fff;font-family:Arial}
+.top{background:#000;padding:14px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #ff0000;position:sticky;top:0;z-index:10}
+.logo{font-weight:900;font-size:22px}.logo b{color:#ff0000}
+.hero{padding:28px 16px;background:linear-gradient(180deg,#1a0000,#050505)}
+.btn{padding:14px 20px;border-radius:30px;border:none;font-weight:900;cursor:pointer}
+.btn-red{background:#ff0000;color:#fff}.btn-green{background:#25D366;color:#fff}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px}
+.card{background:#111;border-radius:18px;overflow:hidden;border:1px solid #222;cursor:pointer}
+.card img{width:100%;height:210px;object-fit:cover}
+.tag{position:absolute;margin:8px;background:#000d;color:#00ff88;font-size:9px;padding:5px 8px;border-radius:8px;font-weight:900}
+.info{padding:10px}
+#paywall{position:fixed;inset:0;background:#000000f5;z-index:99;display:none;align-items:flex-end}
+.paybox{background:#121212;width:100%;border-radius:28px 28px 0 0;padding:20px;max-height:92vh;overflow:auto}
+.pixqr{background:#fff;padding:12px;border-radius:16px;text-align:center;margin:12px 0}
+.codbox{background:#000;border:2px dashed #ffcc00;padding:14px;border-radius:14px;text-align:center}
+</style>
+</head>
+<body>
+<div class="top"><div class="logo">🎬 CINE <b>GRATIFLIX</b></div><div onclick="location.href='./admin.html'" style="font-size:11px;color:#444">ADMIN</div></div>
+
+<div class="hero">
+<h1>Comece grátis.<br>Fique para as histórias.</h1>
+<p style="color:#888">Domínio público e Creative Commons. 3h grátis, depois R$2,99/mês no Pix.</p>
+<small id="timer" style="color:#ffcc00">⏳ Grátis: <span id="tempo">03:00:00</span></small>
+</div>
+
+<div id="filmes" style="padding:10px"><div class="grid" id="grid"></div></div>
+
+<div id="paywall">
+<div class="paybox">
+<div style="display:flex;justify-content:space-between"><div>🔒</div><div onclick="document.getElementById('paywall').style.display='none'" style="font-size:22px">✕</div></div>
+<h2>Seu cinema continua aqui</h2>
+<p style="color:#888">3h acabaram. Libere por <b style="color:#fff">R$2,99/mês</b> no Pix:</p>
+
+<div class="pixqr">
+<img id="qrPix" width="200" height="200"><br>
+<b style="color:#000">CPF: 025.446.319-37</b><br>
+<small style="color:#666">Johnson - Banco Gratidão</small>
+</div>
+
+<button onclick="copiarPix()" style="width:100%;background:#ffcc00;color:#000;padding:14px;border-radius:30px;font-weight:900;border:none">📋 COPIAR CPF 025.446.319-37</button>
+
+<div id="areaCodigo" class="codbox" style="display:none;margin-top:12px">
+<div id="codigoGerado" style="font-weight:900;color:#ffcc00"></div>
+</div>
+
+<hr style="border-color:#222;margin:16px 0">
+
+<div id="antesPago">
+<button onclick="enviarPedidoGrupo()" style="width:100%;background:#25D366;color:#fff;padding:16px;border-radius:30px;font-weight:900;border:none">📤 JÁ FIZ O PIX - ENVIAR COMPROVANTE NO GRUPO</button>
+<small style="display:block;text-align:center;color:#888;margin-top:6px">Envio obrigatório do print no grupo oficial</small>
+<div style="margin-top:16px">
+<small style="color:#888">JÁ TEM CÓDIGO? COLE AQUI:</small>
+<div style="display:flex;gap:8px;margin-top:6px">
+<input id="inputCodigo" placeholder="CINE-XXXX-XXXX" style="flex:1;padding:14px;border-radius:30px;border:1px solid #333;background:#000;color:#fff;text-align:center;font-weight:900">
+<button onclick="validarCodigo()" style="background:#fff;color:#000;border:none;padding:14px 18px;border-radius:30px;font-weight:900">LIBERAR</button>
+</div>
+</div>
+</div>
+
+<div id="depoisPago" style="display:none;text-align:center">
+<h2 style="color:#00ff88">✅ LIBERADO!</h2>
+<p id="codFinal"></p>
+<button onclick="location.reload()" style="width:100%;background:#00ff88;color:#000;padding:16px;border-radius:30px;font-weight:900;border:none">ASSISTIR AGORA</button>
+</div>
+
+</div>
+</div>
+
+<script>
+const LINK_GRUPO = "https://chat.whatsapp.com/BtNurXoNfsg2VVuQb8Tasc";
+const filmes=[
+{t:"A Última Sessão",ano:"1978",tag:"DOMÍNIO PÚBLICO",img:"https://images.unsplash.com/photo-1536440136628-849c177e76a1"},
+{t:"Cidade de Luzes",ano:"2019",tag:"CREATIVE COMMONS",img:"https://images.unsplash.com/photo-1519608487953-e999c86e7455"},
+{t:"Claquete",ano:"2020",tag:"CREATIVE COMMONS",img:"https://images.unsplash.com/photo-1485846234645-a62644f84728"}
+];
+document.getElementById('grid').innerHTML=filmes.map(f=>`<div class="card" onclick="assistir()"><div style="position:relative"><span class="tag">${f.tag}</span><img src="${f.img}"></div><div class="info"><b>${f.t}</b><br><small style="color:#888">${f.ano}</small></div></div>`).join('');
+
+function geraPixPayload(){
+ let base="00020126580014BR.GOV.BCB.PIX01110254463193752040000530398654042.995802BR5913BANCO GRATIDAO6009CURITIBA62070503***6304";
+ function crc16(s){let c=0xFFFF;for(let i=0;i<s.length;i++){c^=s.charCodeAt(i)<<8;for(let j=0;j<8;j++)c=c&0x8000?(c<<1)^0x1021:c<<1;c&=0xFFFF}return c.toString(16).toUpperCase().padStart(4,'0')}
+ return base+crc16(base+"6304");
+}
+document.getElementById('qrPix').src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data="+encodeURIComponent(geraPixPayload());
+
+let tempo=parseInt(localStorage.getItem('cine_t')||10800);
+let pago=localStorage.getItem('cine_pago')==='true';
+setInterval(()=>{
+ if(pago){document.getElementById('timer').innerHTML='✅ PREMIUM • '+localStorage.getItem('cine_code');return}
+ if(tempo<=0){document.getElementById('paywall').style.display='flex';return}
+ tempo--;localStorage.setItem('cine_t',tempo);
+ let h=Math.floor(tempo/3600),m=Math.floor((tempo%3600)/60),s=tempo%60;
+ document.getElementById('tempo').innerText=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+},1000);
+
+function assistir(){if(!pago&&tempo<=0)document.getElementById('paywall').style.display='flex';else alert('▶ Tocando filme domínio público')}
+function copiarPix(){navigator.clipboard.writeText('025.446.319-37');alert('✅ CPF copiado: 025.446.319-37')}
+
+function enviarPedidoGrupo(){
+ let wpp=prompt('Seu WhatsApp com DDD (ex: 41988888888):'); if(!wpp) return;
+ let nome=prompt('Seu nome:')||'Cliente';
+ let id='CINE-'+Date.now().toString().slice(-6);
+ let pedidos=JSON.parse(localStorage.getItem('cine_pedidos')||'[]');
+ pedidos.push({id,nome,wpp,data:new Date().toLocaleString(),status:'pendente'});
+ localStorage.setItem('cine_pedidos',JSON.stringify(pedidos));
+
+ let msg=`🎬 *COMPROVANTE CINE GRATIFLIX* 🎬\n\n*ID:* ${id}\n*Nome:* ${nome}\n*WPP:* ${wpp}\n*Valor:* R$2,99 Pix CPF 025.446.319-37\n*Data:* ${new Date().toLocaleString()}\n\nAnexei o comprovante abaixo 👇\nAguardando liberação!`;
+
+ navigator.clipboard.writeText(msg).then(()=>{
+  alert(`✅ PEDIDO ${id} GERADO!\n\n1. Mensagem copiada!\n2. Entrando no grupo oficial\n3. COLE a mensagem lá\n4. ANEXE o print do Pix R$2,99\n\nID: ${id}`);
+  window.open(LINK_GRUPO,'_blank');
+  document.getElementById('areaCodigo').style.display='block';
+  document.getElementById('codigoGerado').innerHTML=`Pedido <b>${id}</b> criado!<br><small>✅ Mensagem copiada! Cole no grupo + anexe o print</small><br><br><button onclick="window.open('${LINK_GRUPO}','_blank')" style="background:#25D366;color:#fff;border:none;padding:10px 18px;border-radius:20px;font-weight:900">📲 ABRIR GRUPO</button>`;
+  let iv=setInterval(()=>{
+   let libs=JSON.parse(localStorage.getItem('cine_liberados')||'{}');
+   if(libs[id]){clearInterval(iv);localStorage.setItem('cine_pago','true');localStorage.setItem('cine_code',libs[id]);document.getElementById('antesPago').style.display='none';document.getElementById('depoisPago').style.display='block';document.getElementById('codFinal').innerText='Código: '+libs[id];alert('✅ LIBERADO! Código: '+libs[id])}
+  },3000);
+ });
+}
+
+function validarCodigo(){
+ let c=document.getElementById('inputCodigo').value.toUpperCase().trim();
+ if(c.startsWith('CINE-')&&c.length>=10){localStorage.setItem('cine_pago','true');localStorage.setItem('cine_code',c);alert('✅ Código válido!');location.reload()}else alert('Código inválido. Use CINE-XXXX-XXXX');
+}
+</script>
+</body>
+</html>
