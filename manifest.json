@@ -1,0 +1,9 @@
+{
+  "name": "CINE GRATIFLIX",
+  "short_name": "CINE",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#ff0000",
+  "icons": [{"src": "./icone.png","sizes": "512x512","type": "image/png","purpose": "any maskable"}]
+}
